@@ -46,7 +46,6 @@ exports.modifySauce = (req, res, next) => {
         return imgUrl;
     }
     console.log(getUrl().then(result => result));
-   
 
     /*
     const sauceObjet = req.file ?           // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
@@ -57,7 +56,10 @@ exports.modifySauce = (req, res, next) => {
     Sauce.updateOne({ _id: req.params.id }, { ...sauceObjet, _id: req.params.id })  // Méthode pour mettre à jour la sauce avec 2 paramètres
         .then(() => {
             // TODO delete the image
-            res.status(200).json({ message: 'Sauce modifiée !' });
+            const imgUrl = getUrl();
+            fs.unlink(imgUrl), () => {
+                res.status(200).json({ message: 'Sauce modifiée !' });
+            }
         })
         .catch(error => res.status(400).json({ error }));
     */
