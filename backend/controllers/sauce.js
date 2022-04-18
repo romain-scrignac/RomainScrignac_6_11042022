@@ -55,17 +55,18 @@ exports.modifySauce = async (req, res, next) => {
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body };
 
-    // Méthode pour mettre à jour la sauce avec l'id et le contenu
+    // On met à jour la sauce et on supprime l'ancienne image si nouvelle
     await Sauce.updateOne({ _id: req.params.id }, { ...sauceObjet, _id: req.params.id })  
-        .then(() => { 
-            fs.unlink(`images/${filename}`, (err) => {
-                if (err) throw err;
-                console.log(`Ancienne image (${filename}) supprimée`);
-            });
+        .then(() => {
+            if(req.file) {
+                fs.unlink(`images/${filename}`, (err) => {
+                    if (err) throw err;
+                    console.log(`Ancienne image (${filename}) supprimée`);
+                });
+            } else { console.log("Pas de nouvelle image"); }
             res.status(200).json({ message: 'Sauce modifiée !' });
         })
         .catch(error => res.status(400).json({ error }));
-
 };
 
 // Fonction pour supprimer une sauce
