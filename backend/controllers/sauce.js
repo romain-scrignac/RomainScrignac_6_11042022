@@ -3,6 +3,8 @@ const Sauce = require('../models/Sauce');
 
 // On importe fs de node (filesystem)
 const fs = require('fs');
+const { callbackify } = require('util');
+const { resolve } = require('path');
 
 // Fonction qui affiche toutes les sauces
 exports.getAllSauces = (req, res, next) => {
@@ -32,37 +34,30 @@ exports.createSauce = (req, res, next) => {
 
 // Fonction pour modifier une sauce
 exports.modifySauce = (req, res, next) => {
-    // TODO get previous document before update => to have its url
-
     async function getUrl() {
-        let imgUrl;
+        let imgUrl = "";
         try {
-            const sauce = await Sauce.findOne({ _id: req.params.id });
-            imgUrl = sauce.imageUrl;
+            const sauce = await Sauce.findOne({ _id: req.params.id });    
+            imgUrl = sauce.imageUrl;            
         } catch(err) {
             throw err;
         }
-        console.log(imgUrl);
         return imgUrl;
     }
-    console.log(getUrl().then(result => result));
-
-    /*
     const sauceObjet = req.file ?           // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
     {
         ...JSON.parse(req.body.sauce),      // On récupère l'objet sauce et on défini son adresse
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body };
     Sauce.updateOne({ _id: req.params.id }, { ...sauceObjet, _id: req.params.id })  // Méthode pour mettre à jour la sauce avec 2 paramètres
-        .then(() => {
-            // TODO delete the image
-            const imgUrl = getUrl();
-            fs.unlink(imgUrl), () => {
+        .then(async() => {
+            const imgUrl = await getUrl();
+            fs.unlink(imgUrl, () => {
+                console.log(imgUrl);
                 res.status(200).json({ message: 'Sauce modifiée !' });
-            }
+            })
         })
         .catch(error => res.status(400).json({ error }));
-    */
 };
 
 // Fonction pour supprimer une sauce

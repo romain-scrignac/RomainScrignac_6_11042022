@@ -21,12 +21,6 @@ mongoose.connect(mongoAccess, { useNewUrlParser: true, useUnifiedTopology: true 
 // Middleware qui intercepte toutes les requêtes qui ont un content-type json
 app.use(express.json());
 
-// Enregistre "Requête reçue !" dans la console
-app.use((req, res, next) => {
-  console.log('Requête reçue !');
-  next();
-});
-
 // Middleware pour autoriser la communication entre les serveurs frontend et backend
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');

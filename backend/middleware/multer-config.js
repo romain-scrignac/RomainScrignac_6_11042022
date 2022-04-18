@@ -23,6 +23,6 @@ const storage = multer.diskStorage({            // fonction diskStorage de multe
         const sauceName = (sauceObject["name"]).toLowerCase().split(' ').join('+');
         callback(null, sauceName + '_' + Date.now() + '.' + extension);
     }
-});
+}); 
 
 module.exports = multer({ storage }).single('image');   // fonction single de multer pour indiquer qu'il s'agit d'une seule image
