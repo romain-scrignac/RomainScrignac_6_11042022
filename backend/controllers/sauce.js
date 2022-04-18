@@ -33,7 +33,8 @@ exports.createSauce = (req, res, next) => {
 };
 
 // Fonction pour modifier une sauce
-exports.modifySauce = (req, res, next) => {
+exports.modifySauce = async (req, res, next) => {
+    // On récupère l'url de l'ancienne image avant d'updater
     async function getUrl() {
         let imgUrl = "";
         try {
@@ -44,20 +45,27 @@ exports.modifySauce = (req, res, next) => {
         }
         return imgUrl;
     }
-    const sauceObjet = req.file ?           // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
+    const imgUrl = await getUrl();
+    const filename = imgUrl.split('images/')[1];
+
+    // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
+    const sauceObjet = req.file ?
     {
         ...JSON.parse(req.body.sauce),      // On récupère l'objet sauce et on défini son adresse
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body };
-    Sauce.updateOne({ _id: req.params.id }, { ...sauceObjet, _id: req.params.id })  // Méthode pour mettre à jour la sauce avec 2 paramètres
-        .then(async() => {
-            const imgUrl = await getUrl();
-            fs.unlink(imgUrl, () => {
-                console.log(imgUrl);
-                res.status(200).json({ message: 'Sauce modifiée !' });
-            })
+
+    // Méthode pour mettre à jour la sauce avec l'id et le contenu
+    await Sauce.updateOne({ _id: req.params.id }, { ...sauceObjet, _id: req.params.id })  
+        .then(() => { 
+            fs.unlink(`images/${filename}`, (err) => {
+                if (err) throw err;
+                console.log(`Ancienne image (${filename}) supprimée`);
+            });
+            res.status(200).json({ message: 'Sauce modifiée !' });
         })
         .catch(error => res.status(400).json({ error }));
+
 };
 
 // Fonction pour supprimer une sauce
