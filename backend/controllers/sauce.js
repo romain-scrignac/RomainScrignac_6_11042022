@@ -3,19 +3,17 @@ const Sauce = require('../models/Sauce');
 
 // On importe fs de node (filesystem)
 const fs = require('fs');
-const { callbackify } = require('util');
-const { resolve } = require('path');
 
 // Fonction qui affiche toutes les sauces
 exports.getAllSauces = (req, res, next) => {
     Sauce.find()
-        .then(sauces => res.status(200).json(sauces))       // On renvoi le tableau des sauces de la bdd
+        .then(sauces => res.status(200).json(sauces))
         .catch(error => res.status(400).json({ error }));
 };
 
-// Fonction qui affiche une seule sauce, grâce à son identifiant (:id pour passer l'id en paramètres)
+// Fonction qui affiche une seule sauce
 exports.getOneSauce = (req, res, next) => {
-    Sauce.findOne({ _id: req.params.id})                    // Méthode pour retourner la sauce unique qui a la même _id que le paramètre de la requête
+    Sauce.findOne({ _id: req.params.id})
         .then(sauce => res.status(200).json(sauce))
         .catch(error => res.status(404).json({ error }));   // Erreur 404 pour objet non trouvé
 };
@@ -24,10 +22,10 @@ exports.getOneSauce = (req, res, next) => {
 exports.createSauce = (req, res, next) => {
     const sauceObjet = JSON.parse(req.body.sauce);      // On extrait l'objet JSON de sauce (pour les images)
     const sauce = new Sauce({                   
-        ...sauceObjet,                                  // ... -> Opérateur spread pour faire une copie de tous les éléments de req.body
+        ...sauceObjet,           // ... -> Opérateur spread pour faire une copie de tous les éléments de req.body
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // Pour générer l'url du fichier dynamiquement
     });
-    sauce.save()                                                                // Méthode pour enregistrer le nouvel objet dans la bdd
+    sauce.save()        // Méthode pour enregistrer le nouvel objet dans la bdd
         .then(() => res.status(201).json({ message: 'Sauce enregistrée !' }))   // Envoi d'une réponse pour éviter l'expiration de la requête 
         .catch(error => res.status(400).json({ error }));                       // code 201 pour réussite et 400 pour échec
 };
@@ -84,7 +82,7 @@ exports.deleteSauce = (req, res, next) => {
                 });
             }
             const filename = sauce.imageUrl.split('images/')[1];    // On récupère le nom de l'image
-            fs.unlink(`images/${filename}`, () => {                 // Fonction unlink de fs pour supprimer le fichier
+            fs.unlink(`images/${filename}`, () => {                 // unlink de fs pour supprimer le fichier du serveur
                 Sauce.deleteOne({ _id: req.params.id })
                     .then(() => res.status(200).json({ message: 'Sauce supprimée !' }))
                     .catch(error => res.status(400).json({ error }));
@@ -141,4 +139,4 @@ exports.likeSauce = async (req, res, next) => {
     catch(error) {
         res.status(400).json({ error });
     }
-}
+};
