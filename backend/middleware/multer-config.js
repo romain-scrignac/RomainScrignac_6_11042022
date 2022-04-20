@@ -1,9 +1,6 @@
 // On importer multer
 const multer = require('multer');
 
-// On importe fs
-const fs = require('fs');
-
 // Création dictionnaire pour les extensions
 const MIME_TYPES = {
     'image/jpg': 'jpg',

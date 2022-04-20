@@ -17,7 +17,7 @@ module.exports = (req, res, next) => {
             next();
         }
     } catch (error) {
-        console.log("erreur")
+        console.log(error);
         res.status(401).json({ error: error | 'Requête non authentifiée !' });  // code 401 (non autorisé)
     }
 };

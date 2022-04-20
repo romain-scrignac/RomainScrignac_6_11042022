@@ -1,4 +1,4 @@
-// Importation du package http de node. (commande require pour importer)
+// Importation du package http de node.
 const http = require('http');
 
 // Importation application express
