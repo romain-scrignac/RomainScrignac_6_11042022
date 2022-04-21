@@ -37,18 +37,9 @@ exports.login = (req, res, next) => {
                     if (!valid) {
                         return res.status(401).json({ message: 'Mot de passe incorrect !' });
                     }
-                    res.status(200).json({      // Si la comparaison est valide on envoi en réponse son userId avec un token
-                        userId: user.id,
-                        token: jwt.sign(        // Fonction pour encoder le token avec l'userId + la clé cryptée + délais d'expiration
-                            { 
-                                userId: user.id 
-                            },
-                            key,
-                            { 
-                                expiresIn: '24h' 
-                            }
-                        )
-                    });
+                    // Fonction jwt.sign pour encoder le token avec l'userId + la clé cryptée + délais d'expiration
+                    const token = jwt.sign({ userId: user.id }, key, { expiresIn: '24h' });
+                    res.status(200).json({ userId: user.id, token });
                 })
                 .catch(error => res.status(500).json({ error }));
         })
