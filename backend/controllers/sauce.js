@@ -32,39 +32,49 @@ exports.createSauce = (req, res, next) => {
 
 // Fonction pour modifier une sauce
 exports.modifySauce = async (req, res, next) => {
-    // On récupère l'url de l'ancienne image avant d'updater
+/**
+ * @description This function looks for the url of the image and returns its name 
+ *              before modifying the sauce. If the creator of the sauce is not authenticated 
+ *              his name will be undefined and the rest of the code will not be executed.
+ * */
     async function getUrl() {
-        let imgUrl = "";
         try {
-            const sauce = await Sauce.findOne({ _id: req.params.id });    
-            imgUrl = sauce.imageUrl;            
-        } catch(err) {
-            throw err;
+            let sauce = await Sauce.findOne({ _id: req.params.id })
+            if (sauce.userId !== req.auth.userId) {
+                res.status(401).json({ message: 'Requête non autorisée !' });
+            } else {
+                const imgUrl = sauce.imageUrl;
+                const fileName = imgUrl.split('images/')[1];
+                return fileName;
+            }
+        } catch(error) {
+            throw error;
         }
-        return imgUrl;
     }
-    const imgUrl = await getUrl();
-    const filename = imgUrl.split('images/')[1];
+    const fileName = await getUrl();
+    console.log(fileName);
 
-    // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
-    const sauceObjet = req.file ?
-    {
-        ...JSON.parse(req.body.sauce),      // On récupère l'objet sauce et on défini son adresse
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-    } : { ...req.body };
+    if (fileName !== undefined) {
+        // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
+        const sauceObjet = req.file ?
+        {
+            ...JSON.parse(req.body.sauce),      // On récupère l'objet sauce et on défini son adresse
+            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+        } : { ...req.body };
 
-    // On met à jour la sauce et on supprime l'ancienne image si nouvelle
-    await Sauce.updateOne({ _id: req.params.id }, { ...sauceObjet, _id: req.params.id })  
-        .then(() => {
-            if(req.file) {
-                fs.unlink(`images/${filename}`, (err) => {
-                    if (err) throw err;
-                    console.log(`Ancienne image (${filename}) supprimée`);
-                });
-            } else { console.log("Pas de nouvelle image"); }
-            res.status(200).json({ message: 'Sauce modifiée !' });
-        })
-        .catch(error => res.status(400).json({ error }));
+        // On met à jour la sauce et on supprime l'ancienne image si nouvelle
+        await Sauce.updateOne({ _id: req.params.id }, { ...sauceObjet, _id: req.params.id })  
+            .then(() => {
+                if(req.file) {
+                    fs.unlink(`images/${fileName}`, (err) => {
+                        if (err) throw err;
+                        console.log(`Ancienne image (${fileName}) supprimée`);
+                    });
+                } else { console.log("Pas de nouvelle image"); }
+                res.status(200).json({ message: 'Sauce modifiée !' });
+            })
+            .catch(error => res.status(400).json({ error }));
+    }
 };
 
 // Fonction pour supprimer une sauce
