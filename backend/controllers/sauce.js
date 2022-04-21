@@ -1,5 +1,6 @@
 // On importe Sauce
 const Sauce = require('../models/Sauce');
+const mongoose = require("mongoose");
 
 // On importe fs de node (filesystem)
 const fs = require('fs');
@@ -38,10 +39,13 @@ exports.modifySauce = async (req, res, next) => {
  *              before modifying the sauce. If the creator of the sauce is not authenticated 
  *              his name will be undefined and the rest of the code will not be executed.
  **/
-    async function getUrl() {
+    async function getFileName() {
         try {
-            const sauce = await Sauce.findOne({ _id: req.params.id })
-            if (sauce._id.valueOf() !== req.params.id) {
+            if(!mongoose.isValidObjectId(req.params.id)) {
+                throw 'Id de Sauce invalide !';
+            }
+            const sauce = await Sauce.findOne({ _id: req.params.id });
+            if (!sauce) {
                 throw 'Sauce non trouvée !';
             }
             if (!req.auth.userId || (sauce.userId !== req.auth.userId)) {
@@ -51,10 +55,22 @@ exports.modifySauce = async (req, res, next) => {
             const fileName = imgUrl.split('images/')[1];
             return fileName;
         } catch (error) {
-            res.status(400).json({ error });
+            let statusCode = 400;
+            switch(error) {
+                case "Id de Sauce invalide !":
+                    statusCode = 422;
+                    break;
+                case "Requête non autorisée !":
+                    statusCode = 403;
+                    break;
+                case "Sauce non trouvée !":
+                    statusCode = 404;
+                    break;
+            }
+            res.status(statusCode).json({ error });
         }
     }
-    const fileName = await getUrl();
+    const fileName = await getFileName();
 
     if (fileName !== undefined) {
         // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non

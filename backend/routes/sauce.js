@@ -12,8 +12,8 @@ const auth = require('../middleware/auth');
 const multer = require('../middleware/multer-config');
 
 // On importe les routes avec sauceCtrl et la fonction createSauce. On ajoute auth et multer
-router.get('/', sauceCtrl.getAllSauces);                    // Requête GET pour récupérer toutes les sauces
-router.get('/:id', sauceCtrl.getOneSauce);                  // Requête GET pour récupérer une seule sauce
+router.get('/', auth, sauceCtrl.getAllSauces);              // Requête GET pour récupérer toutes les sauces
+router.get('/:id', auth, sauceCtrl.getOneSauce);            // Requête GET pour récupérer une seule sauce
 router.post('/', auth, multer, sauceCtrl.createSauce);      // Requête POST pour créer une nouvelle sauce
 router.put('/:id', auth, multer, sauceCtrl.modifySauce);    // Requête PUT pour modifier une sauce
 router.delete('/:id', auth, sauceCtrl.deleteSauce);         // Requête DELETE pour supprimer une sauce
