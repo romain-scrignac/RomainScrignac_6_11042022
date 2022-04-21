@@ -20,9 +20,9 @@ exports.getOneSauce = (req, res, next) => {
 
 // Fonction pour créer une nouvelle sauce
 exports.createSauce = (req, res, next) => {
-    const sauceObjet = JSON.parse(req.body.sauce);      // On extrait l'objet JSON de sauce (pour les images)
+    const sauceObject = JSON.parse(req.body.sauce);      // On extrait l'objet JSON de sauce (pour les images)
     const sauce = new Sauce({                   
-        ...sauceObjet,           // ... -> Opérateur spread pour faire une copie de tous les éléments de req.body
+        ...sauceObject,           // ... -> Opérateur spread pour faire une copie de tous les éléments de req.body
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // Pour générer l'url du fichier dynamiquement
     });
     sauce.save()        // Méthode pour enregistrer le nouvel objet dans la bdd
@@ -30,40 +30,42 @@ exports.createSauce = (req, res, next) => {
         .catch(error => res.status(400).json({ error }));                       // code 201 pour réussite et 400 pour échec
 };
 
+
 // Fonction pour modifier une sauce
 exports.modifySauce = async (req, res, next) => {
 /**
  * @description This function looks for the url of the image and returns its name 
  *              before modifying the sauce. If the creator of the sauce is not authenticated 
  *              his name will be undefined and the rest of the code will not be executed.
- * */
+ **/
     async function getUrl() {
         try {
-            let sauce = await Sauce.findOne({ _id: req.params.id })
-            if (sauce.userId !== req.auth.userId) {
-                res.status(401).json({ message: 'Requête non autorisée !' });
-            } else {
-                const imgUrl = sauce.imageUrl;
-                const fileName = imgUrl.split('images/')[1];
-                return fileName;
+            const sauce = await Sauce.findOne({ _id: req.params.id })
+            if (sauce._id.valueOf() !== req.params.id) {
+                throw 'Sauce non trouvée !';
             }
-        } catch(error) {
-            throw error;
+            if (!req.auth.userId || (sauce.userId !== req.auth.userId)) {
+                throw 'Requête non autorisée !';
+            } 
+            const imgUrl = sauce.imageUrl;
+            const fileName = imgUrl.split('images/')[1];
+            return fileName;
+        } catch (error) {
+            res.status(400).json({ error });
         }
     }
     const fileName = await getUrl();
-    console.log(fileName);
 
     if (fileName !== undefined) {
         // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
-        const sauceObjet = req.file ?
+        const sauceObject = req.file ?
         {
             ...JSON.parse(req.body.sauce),      // On récupère l'objet sauce et on défini son adresse
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
         } : { ...req.body };
 
         // On met à jour la sauce et on supprime l'ancienne image si nouvelle
-        await Sauce.updateOne({ _id: req.params.id }, { ...sauceObjet, _id: req.params.id })  
+        await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })  
             .then(() => {
                 if(req.file) {
                     fs.unlink(`images/${fileName}`, (err) => {
@@ -82,14 +84,10 @@ exports.deleteSauce = (req, res, next) => {
     Sauce.findOne({ _id: req.params.id })
         .then((sauce) => {
             if (!sauce) {
-                return res.status(404).json({
-                    error: new Error('Sauce non trouvée !')
-                });
+                throw 'Sauce non trouvée !';
             }
             if (sauce.userId !== req.auth.userId) {
-                return res.status(400).json({
-                    error: new Error('Requête non autorisée !')
-                });
+                throw 'Requête non autorisée !';
             }
             const filename = sauce.imageUrl.split('images/')[1];    // On récupère le nom de l'image
             fs.unlink(`images/${filename}`, () => {                 // unlink de fs pour supprimer le fichier du serveur
