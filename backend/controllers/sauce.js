@@ -16,21 +16,34 @@ exports.getAllSauces = (req, res, next) => {
 exports.getOneSauce = (req, res, next) => {
     Sauce.findOne({ _id: req.params.id})
         .then(sauce => res.status(200).json(sauce))
-        .catch(error => res.status(404).json({ error }));   // Erreur 404 pour objet non trouvé
+        .catch(error => res.status(404).json({ error }));
 };
 
 // Fonction pour créer une nouvelle sauce
 exports.createSauce = (req, res, next) => {
-    const sauceObject = JSON.parse(req.body.sauce);      // On extrait l'objet JSON de sauce (pour les images)
+    try {
+        const sauceObject = JSON.parse(req.body.sauce);     // On extrait l'objet JSON de sauce (pour les images)
+        const sauce = new Sauce({                   
+            ...sauceObject,           // ... -> Opérateur spread pour faire une copie de tous les éléments de req.body
+            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // On génère l'url du fichier dynamiquement
+        });
+        sauce.save()    // On ajoute la sauce à la base de données
+        .then(() => res.status(201).json({ message: 'Sauce enregistrée !' }))
+    } catch (error) {
+        res.status(400).json({ error });
+    }
+    /*
+    const sauceObject = JSON.parse(req.body.sauce);     // On extrait l'objet JSON de sauce (pour les images)
+    console.log(sauceObject.userId);
     const sauce = new Sauce({                   
         ...sauceObject,           // ... -> Opérateur spread pour faire une copie de tous les éléments de req.body
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // Pour générer l'url du fichier dynamiquement
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // On génère l'url du fichier dynamiquement
     });
-    sauce.save()        // Méthode pour enregistrer le nouvel objet dans la bdd
-        .then(() => res.status(201).json({ message: 'Sauce enregistrée !' }))   // Envoi d'une réponse pour éviter l'expiration de la requête 
-        .catch(error => res.status(400).json({ error }));                       // code 201 pour réussite et 400 pour échec
+    sauce.save()    // On ajoute la sauce à la base de données
+        .then(() => res.status(201).json({ message: 'Sauce enregistrée !' }))
+        .catch(error => res.status(400).json({ error }));
+    */
 };
-
 
 // Fonction pour modifier une sauce
 exports.modifySauce = async (req, res, next) => {
@@ -55,17 +68,18 @@ exports.modifySauce = async (req, res, next) => {
             const fileName = imgUrl.split('images/')[1];
             return fileName;
         } catch (error) {
-            let statusCode = 400;
             switch(error) {
                 case "Id de Sauce invalide !":
-                    statusCode = 422;
-                    break;
-                case "Requête non autorisée !":
-                    statusCode = 403;
+                    statusCode = 422;   // Entité non traitable
                     break;
                 case "Sauce non trouvée !":
-                    statusCode = 404;
+                    statusCode = 404;   // Objet non trouvé
                     break;
+                case "Requête non autorisée !":
+                    statusCode = 403;   // Accès interdit
+                    break;
+                default:
+                    statusCode = 400;   // Mauvaise requête
             }
             res.status(statusCode).json({ error });
         }
@@ -96,71 +110,96 @@ exports.modifySauce = async (req, res, next) => {
 };
 
 // Fonction pour supprimer une sauce
-exports.deleteSauce = (req, res, next) => {
-    Sauce.findOne({ _id: req.params.id })
-        .then((sauce) => {
-            if (!sauce) {
-                throw 'Sauce non trouvée !';
-            }
-            if (sauce.userId !== req.auth.userId) {
-                throw 'Requête non autorisée !';
-            }
-            const filename = sauce.imageUrl.split('images/')[1];    // On récupère le nom de l'image
-            fs.unlink(`images/${filename}`, () => {                 // unlink de fs pour supprimer le fichier du serveur
-                Sauce.deleteOne({ _id: req.params.id })
-                    .then(() => res.status(200).json({ message: 'Sauce supprimée !' }))
-                    .catch(error => res.status(400).json({ error }));
-            })
-        })
-        .catch(error => res.status(500).json({ error }));
+exports.deleteSauce = async (req, res, next) => {
+    try {
+        if(!mongoose.isValidObjectId(req.params.id)) {
+            throw 'Id de Sauce invalide !';
+        }
+        const sauce = await Sauce.findOne({ _id: req.params.id })
+        if (!sauce) {
+            statusCode = 404;
+            throw 'Sauce non trouvée !';
+        }
+        if (!req.auth.userId || (sauce.userId !== req.auth.userId)) {
+            statusCode = 403;
+            throw 'Requête non autorisée !';
+        }
+        const fileName = sauce.imageUrl.split('images/')[1];    // On récupère le nom de l'image
+        fs.unlink(`images/${fileName}`, () => {                 // On supprime le fichier du serveur
+            Sauce.deleteOne({ _id: req.params.id })
+                .then(() => res.status(200).json({ message: 'Sauce supprimée !' }));
+        });
+    } catch (error) {
+        switch (error) {
+            case "Id de Sauce invalide !":
+                statusCode = 422;   // Entité non traitable
+                break;
+            case "Sauce non trouvée !":
+                statusCode = 404;   // Objet non trouvé
+                break;
+            case "Requête non autorisée !":
+                statusCode = 403;   // Accès interdit
+                break;
+            default:
+                statusCode = 400;   // Mauvaise requête
+        }
+        res.status(statusCode).json({ error });
+    }
 };
 
 // Fonction pour le système de likes
 exports.likeSauce = async (req, res, next) => {
     try {
+        if(!mongoose.isValidObjectId(req.params.id)) {
+            throw 'Id de Sauce invalide !';
+        }
         const sauce = await Sauce.findOne({ _id: req.params.id });
         const like = req.body.like;
         const userId = req.body.userId;
+        const usersLiked = sauce.usersLiked;
+        const usersDisliked = sauce.usersDisliked;
 
-        if (!sauce.usersLiked.includes(userId) && like === 1) {             // Si l'utilisateur like une sauce
+        if(!mongoose.isValidObjectId(userId) || !userId) {
+            throw 'Id d\'utilisateur invalide !';
+        }
+
+        // Si l'utilisateur like une sauce
+        if (!usersLiked.includes(userId) && !usersDisliked.includes(userId) && like === 1) {
             await Sauce.updateOne(
-            {
-                _id: req.params.id
-            },
-            {
-                $inc: { likes: 1 }, $push: { usersLiked: userId }
-            })
+                { _id: req.params.id }, { $inc: { likes: 1 }, $push: { usersLiked: userId } }
+            )
             res.status(200).json({ message: 'Like ajouté !' });
-        } else if (sauce.usersLiked.includes(userId) && like === 0) {       // Si l'utilisateur retire son like
+        }
+        // Si l'utilisateur retire son like
+        if (usersLiked.includes(userId) && like === 0) {
             await Sauce.updateOne(
-            { 
-                _id: req.params.id 
-            }, 
-            { 
-                $inc: { likes: -1 }, $pull: { usersLiked: userId }
-            })
+                { _id: req.params.id }, { $inc: { likes: -1 }, $pull: { usersLiked: userId } }
+            )
             res.status(200).json({ message: 'Like retiré !' });
-        } else if (!sauce.usersDisliked.includes(userId) && like === -1) {  // Si l'utilisateur dislike une sauce
+        }
+        // Si l'utilisateur dislike une sauce
+        if (!usersDisliked.includes(userId) && !usersLiked.includes(userId) && like === -1) {
             await Sauce.updateOne(
-            { 
-                _id: req.params.id 
-            }, 
-            { 
-                $inc: { dislikes: 1 }, $push: { usersDisliked: userId }
-            })
+                { _id: req.params.id }, { $inc: { dislikes: 1 }, $push: { usersDisliked: userId } }
+            )
             res.status(200).json({ message: 'Dislike ajouté !' });
-        } else if (sauce.usersDisliked.includes(userId) && like === 0) {    // Si l'utilisateur retire son dislike
+        }
+        // Si l'utilisateur retire son dislike
+        if (usersDisliked.includes(userId) && like === 0) {
             await Sauce.updateOne(
-            { 
-                _id: req.params.id 
-            }, 
-            { 
-                $inc: { dislikes: -1 }, $pull: { usersDisliked: userId }
-            })
+                { _id: req.params.id }, { $inc: { dislikes: -1 }, $pull: { usersDisliked: userId } }
+            )
             res.status(200).json({ message: 'Dislike retiré !' });
         }
-    }
-    catch(error) {
-        res.status(400).json({ error });
+    } catch(error) {
+        switch (error) {
+            case 'Id de Sauce invalide !':
+            case 'Id d\'utilisateur invalide !':
+                statusCode = 422;
+                    break;
+            default:
+                statusCode = 400;
+        }
+        res.status(statusCode).json({ error });
     }
 };
