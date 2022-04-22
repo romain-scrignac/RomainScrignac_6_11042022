@@ -8,7 +8,6 @@ const MIME_TYPES = {
     'image/png': 'png'
 };
 
-
 // Création d'un objet de configuration pour multer
 const storage = multer.diskStorage({            // fonction diskStorage de multer qui a besoin de 2 paramètres: destination et filename
     destination: (req, file, callback) => {
