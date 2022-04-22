@@ -8,6 +8,7 @@ const MIME_TYPES = {
     'image/png': 'png'
 };
 
+
 // Création d'un objet de configuration pour multer
 const storage = multer.diskStorage({            // fonction diskStorage de multer qui a besoin de 2 paramètres: destination et filename
     destination: (req, file, callback) => {
@@ -15,9 +16,9 @@ const storage = multer.diskStorage({            // fonction diskStorage de multe
     },
     filename: (req, file, callback) => {
         const extension = MIME_TYPES[file.mimetype];    // On crée l'extension avec la propriété mimetype de file avec multer
-        const reqSauce= req.body["sauce"];
+        const reqSauce= req.body.sauce;
         const sauceObject = JSON.parse(reqSauce);
-        const sauceName = (sauceObject["name"]).toLowerCase().split(' ').join('+');
+        const sauceName = (sauceObject.name).toLowerCase().split(' ').join('+');
         callback(null, sauceName + '_' + Date.now() + '.' + extension);
     }
 }); 
