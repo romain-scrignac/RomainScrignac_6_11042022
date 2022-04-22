@@ -28,21 +28,10 @@ exports.createSauce = (req, res, next) => {
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // On génère l'url du fichier dynamiquement
         });
         sauce.save()    // On ajoute la sauce à la base de données
-        .then(() => res.status(201).json({ message: 'Sauce enregistrée !' }))
+        res.status(201).json({ message: 'Sauce enregistrée !' });
     } catch (error) {
         res.status(400).json({ error });
     }
-    /*
-    const sauceObject = JSON.parse(req.body.sauce);     // On extrait l'objet JSON de sauce (pour les images)
-    console.log(sauceObject.userId);
-    const sauce = new Sauce({                   
-        ...sauceObject,           // ... -> Opérateur spread pour faire une copie de tous les éléments de req.body
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // On génère l'url du fichier dynamiquement
-    });
-    sauce.save()    // On ajoute la sauce à la base de données
-        .then(() => res.status(201).json({ message: 'Sauce enregistrée !' }))
-        .catch(error => res.status(400).json({ error }));
-    */
 };
 
 // Fonction pour modifier une sauce
@@ -125,9 +114,9 @@ exports.deleteSauce = async (req, res, next) => {
             throw 'Requête non autorisée !';
         }
         const fileName = sauce.imageUrl.split('images/')[1];    // On récupère le nom de l'image
-        fs.unlink(`images/${fileName}`, () => {                 // On supprime le fichier du serveur
-            Sauce.deleteOne({ _id: req.params.id })
-                .then(() => res.status(200).json({ message: 'Sauce supprimée !' }));
+        fs.unlink(`images/${fileName}`, async () => {                 // On supprime le fichier du serveur
+            await Sauce.deleteOne({ _id: req.params.id })
+            res.status(200).json({ message: 'Sauce supprimée !' });
         });
     } catch (error) {
         switch (error) {
