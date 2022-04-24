@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 // On importe jsonwebtoken
 const jwt = require('jsonwebtoken');
 
-// On importe User.js
+// On importe le modèle User
 const User = require('../models/User');
 
 // On importe la clé

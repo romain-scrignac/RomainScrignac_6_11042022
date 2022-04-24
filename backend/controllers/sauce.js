@@ -1,9 +1,11 @@
-// On importe Sauce
-const Sauce = require('../models/Sauce');
+// On importe mongoose
 const mongoose = require("mongoose");
 
 // On importe fs de node (filesystem)
 const fs = require('fs');
+
+// On importe le modèle Sauce
+const Sauce = require('../models/Sauce');
 
 // Fonction qui affiche toutes les sauces
 exports.getAllSauces = (req, res, next) => {
@@ -20,17 +22,21 @@ exports.getOneSauce = (req, res, next) => {
 };
 
 // Fonction pour créer une nouvelle sauce
-exports.createSauce = (req, res, next) => {
+exports.createSauce = async (req, res, next) => {
     try {
         const sauceObject = JSON.parse(req.body.sauce);     // On extrait l'objet JSON de sauce (pour les images)
-        const sauce = new Sauce({                   
-            ...sauceObject,           // ... -> Opérateur spread pour faire une copie de tous les éléments de req.body
+        const sauce = new Sauce({
+            ...sauceObject,
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // On génère l'url du fichier dynamiquement
         });
-        sauce.save()    // On ajoute la sauce à la base de données
-        res.status(201).json({ message: 'Sauce enregistrée !' });
+        console.log(sauce);
+        //const saveSauce = await sauce.save();    // On ajoute la sauce à la base de données
+        if(!saveSauce) {
+            throw 'Une erreur est survenue !';
+        }
+        res.status(201).json({ message: `Sauce ${sauceObject.name} enregistrée !` });
     } catch (error) {
-        res.status(400).json({ error });
+        res.status(500).json({ error });
     }
 };
 
@@ -87,8 +93,8 @@ exports.modifySauce = async (req, res, next) => {
         await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })  
             .then(() => {
                 if(req.file) {
-                    fs.unlink(`images/${fileName}`, (err) => {
-                        if (err) throw err;
+                    fs.unlink(`images/${fileName}`, (error) => {
+                        if (error) throw error;
                         console.log(`Ancienne image (${fileName}) supprimée`);
                     });
                 } else { console.log("Pas de nouvelle image"); }
