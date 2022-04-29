@@ -8,21 +8,21 @@ const fs = require('fs');
 const Sauce = require('../models/Sauce');
 
 // Fonction qui affiche toutes les sauces
-exports.getAllSauces = (req, res, next) => {
+exports.getAllSauces = (req, res) => {
     Sauce.find()
         .then(sauces => res.status(200).json(sauces))
         .catch(error => res.status(400).json({ error }));
 };
 
 // Fonction qui affiche une seule sauce
-exports.getOneSauce = (req, res, next) => {
+exports.getOneSauce = (req, res) => {
     Sauce.findOne({ _id: req.params.id})
         .then(sauce => res.status(200).json(sauce))
         .catch(error => res.status(404).json({ error }));
 };
 
 // Fonction pour créer une nouvelle sauce
-exports.createSauce = async (req, res, next) => {
+exports.createSauce = async (req, res) => {
     try {
         const sauceObject = JSON.parse(req.body.sauce);     // On extrait l'objet JSON de sauce (pour les images)
         const sauce = new Sauce({
@@ -40,7 +40,7 @@ exports.createSauce = async (req, res, next) => {
 };
 
 // Fonction pour modifier une sauce
-exports.modifySauce = async (req, res, next) => {
+exports.modifySauce = async (req, res) => {
 /**
  * @description This function looks for the url of the image and returns its name 
  *              before modifying the sauce. If the creator of the sauce is not authenticated 
@@ -104,7 +104,7 @@ exports.modifySauce = async (req, res, next) => {
 };
 
 // Fonction pour supprimer une sauce
-exports.deleteSauce = async (req, res, next) => {
+exports.deleteSauce = async (req, res) => {
     try {
         if(!mongoose.isValidObjectId(req.params.id)) {
             throw 'Id de Sauce invalide !';
@@ -142,7 +142,7 @@ exports.deleteSauce = async (req, res, next) => {
 };
 
 // Fonction pour le système de likes
-exports.likeSauce = async (req, res, next) => {
+exports.likeSauce = async (req, res) => {
     try {
         if(!mongoose.isValidObjectId(req.params.id)) {
             throw 'Id de Sauce invalide !';

@@ -1,9 +1,6 @@
 // On importe jsonwebtoken
 const jwt = require ('jsonwebtoken');
 
-// On importe la clé
-const key = require('../modules/module').key;
-
 // On importe le modèle User
 const User = require('../models/User');
 
@@ -15,7 +12,7 @@ module.exports = async (req, res, next) => {
             throw "Utilisateur non authentifié !";
         }
         const token = authorization.split(' ')[1];
-        req.auth = jwt.verify(token, key);      // Vérification du token et on le retourne dans le header de la requête
+        req.auth = jwt.verify(token, process.env.JWT_SECRET);      // Vérification du token et on le retourne dans le header de la requête
         const user = await User.findOne({ _id: req.auth.userId });
         if(!user) {     // Vérification de l'existence de l'utilisateur dans la bdd
             throw "Id d\'utilisateur invalide !";

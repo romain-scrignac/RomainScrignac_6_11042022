@@ -1,3 +1,6 @@
+// Variables d'environnement dotenv
+require('dotenv').config();
+
 // Importation du package http de node.
 const http = require('http');
 

@@ -12,10 +12,9 @@ const sauceRoutes = require('./routes/sauce');
 const userRoutes = require('./routes/user');
 
 // Importation de mongoose + connection à la bdd mongodb
-const mongoAccess = require('./modules/module').mongoAccess;
 const mongoose = require('mongoose');
 
-mongoose.connect(mongoAccess, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_DB_CONN, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('Connexion à MongoDB Atlas réussie !'))
     .catch(() => console.log('Connexion à MongoDB Atlas échouée !'));
 

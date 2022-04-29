@@ -27,6 +27,9 @@ const storage = multer.diskStorage({            // fonction diskStorage de multe
                 sauceName = sauceObject.name.replace(chars, '').toLowerCase().split(' ').join('+');
                 callback(null, sauceName + '_' + Date.now() + '.' + extension);
             }
+        } else {
+            const error = new Error("file required");
+            callback(error, '');
         }
     }
 });
