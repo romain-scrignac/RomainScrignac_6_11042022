@@ -4,6 +4,7 @@ const jwt = require ('jsonwebtoken');
 // On importe la clé
 const key = require('../modules/module').key;
 
+// On importe le modèle User
 const User = require('../models/User');
 
 // On l'exporte
@@ -31,6 +32,6 @@ module.exports = async (req, res, next) => {
             default:
                 statusCode = 500;
         }
-        res.status(statusCode).json({ error });  // code 401 (non autorisé)
+        res.status(statusCode).json({ error });
     }
 };

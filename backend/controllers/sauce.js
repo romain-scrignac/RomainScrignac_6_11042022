@@ -29,8 +29,7 @@ exports.createSauce = async (req, res, next) => {
             ...sauceObject,
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // On génère l'url du fichier dynamiquement
         });
-        console.log(sauce);
-        //const saveSauce = await sauce.save();    // On ajoute la sauce à la base de données
+        const saveSauce = await sauce.save();    // On ajoute la sauce à la base de données
         if(!saveSauce) {
             throw 'Une erreur est survenue !';
         }
@@ -85,7 +84,7 @@ exports.modifySauce = async (req, res, next) => {
         // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
         const sauceObject = req.file ?
         {
-            ...JSON.parse(req.body.sauce),      // On récupère l'objet sauce et on défini son adresse
+            ...JSON.parse(req.body.sauce),      // On récupère l'objet sauce et on défini l'adresse de l'image
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
         } : { ...req.body };
 
@@ -120,7 +119,7 @@ exports.deleteSauce = async (req, res, next) => {
             throw 'Requête non autorisée !';
         }
         const fileName = sauce.imageUrl.split('images/')[1];    // On récupère le nom de l'image
-        fs.unlink(`images/${fileName}`, async () => {                 // On supprime le fichier du serveur
+        fs.unlink(`images/${fileName}`, async () => {           // On supprime le fichier du serveur
             await Sauce.deleteOne({ _id: req.params.id })
             res.status(200).json({ message: 'Sauce supprimée !' });
         });
@@ -161,28 +160,28 @@ exports.likeSauce = async (req, res, next) => {
         // Si l'utilisateur like une sauce
         if (!usersLiked.includes(userId) && !usersDisliked.includes(userId) && like === 1) {
             await Sauce.updateOne(
-                { _id: req.params.id }, { $inc: { likes: 1 }, $push: { usersLiked: userId } }
+                { _id: req.params.id }, {$inc: { likes: 1 }, $push: { usersLiked: userId }}
             )
             res.status(200).json({ message: 'Like ajouté !' });
         }
         // Si l'utilisateur retire son like
         if (usersLiked.includes(userId) && like === 0) {
             await Sauce.updateOne(
-                { _id: req.params.id }, { $inc: { likes: -1 }, $pull: { usersLiked: userId } }
+                { _id: req.params.id }, {$inc: { likes: -1 }, $pull: { usersLiked: userId }}
             )
             res.status(200).json({ message: 'Like retiré !' });
         }
         // Si l'utilisateur dislike une sauce
         if (!usersDisliked.includes(userId) && !usersLiked.includes(userId) && like === -1) {
             await Sauce.updateOne(
-                { _id: req.params.id }, { $inc: { dislikes: 1 }, $push: { usersDisliked: userId } }
+                { _id: req.params.id }, {$inc: { dislikes: 1 }, $push: { usersDisliked: userId }}
             )
             res.status(200).json({ message: 'Dislike ajouté !' });
         }
         // Si l'utilisateur retire son dislike
         if (usersDisliked.includes(userId) && like === 0) {
             await Sauce.updateOne(
-                { _id: req.params.id }, { $inc: { dislikes: -1 }, $pull: { usersDisliked: userId } }
+                { _id: req.params.id }, {$inc: { dislikes: -1 }, $pull: { usersDisliked: userId }}
             )
             res.status(200).json({ message: 'Dislike retiré !' });
         }
