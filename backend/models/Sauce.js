@@ -12,8 +12,8 @@ const sauceSchema = mongoose.Schema({
     heat: { type: Number, required: true },
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
-    usersLiked: { type: Array },
-    usersDisliked: { type: Array }
+    usersLiked: { type: [String] },
+    usersDisliked: { type: [String] }
 });
 
 // On exporte le schéma en tant que modèle mongoose appelé "Sauce"
