@@ -9,21 +9,21 @@ module.exports = async (req, res, next) => {
     try {
         const authorization = req.headers.authorization;
         if(!authorization) {    // Vérification de présence du header authorization
-            throw "Utilisateur non authentifié !";
+            throw 'Unauthenticated user !';
         }
         const token = authorization.split(' ')[1];
-        req.auth = jwt.verify(token, process.env.JWT_SECRET);      // Vérification du token et on le retourne dans le header de la requête
+        req.auth = jwt.verify(token, process.env.JWT_KEY);      // Vérification du token et on le retourne dans le header de la requête
         const user = await User.findOne({ _id: req.auth.userId });
         if(!user) {     // Vérification de l'existence de l'utilisateur dans la bdd
-            throw "Id d\'utilisateur invalide !";
+            throw 'Invalid user id !';
         }
         next();
     } catch (error) {
         switch (error) {
-            case "Utilisateur non authentifié !":
+            case "Unauthenticated user !":
                 statusCode = 401;
                 break;
-            case "Id d\'utilisateur invalide !":
+            case "Invalid user id !":
                 statusCode = 422;
                 break;
             default:

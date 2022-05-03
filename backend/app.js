@@ -15,8 +15,8 @@ const userRoutes = require('./routes/user');
 const mongoose = require('mongoose');
 
 mongoose.connect(process.env.MONGO_DB_CONN, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Connexion à MongoDB Atlas réussie !'))
-    .catch(() => console.log('Connexion à MongoDB Atlas échouée !'));
+    .then(() => console.log('Connection to MongoDB Atlas successful!'))
+    .catch(() => console.log('Connection to MongoDB Atlas failed!'));
 
 // Middleware qui intercepte toutes les requêtes qui ont un content-type json
 app.use(express.json());
@@ -30,9 +30,9 @@ app.use((req, res, next) => {
 });
 
 // On indique la destination du dossier images avec les fonctions static d'express et join de path
-app.use('/images', express.static(path.join(__dirname, 'images'))); // 
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// On enregistre les routes dans l'application (celles attendues par le front-end)
+// On enregistre les routes dans l'application
 app.use('/api/sauces', sauceRoutes);
 app.use('/api/auth', userRoutes);
 
