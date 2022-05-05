@@ -11,9 +11,12 @@ const User = require('../models/User');
 exports.signup = (req, res) => {
     const regexEmail = /^([a-z0-9]{1,20})([\.|_|-]{1}[a-z0-9]{1,20})?@{1}([a-z0-9]{2,15})\.[a-z]{2,4}$/;
     // Vérification du formulaire, si c'est bon on crée le nouvel utilisateur
-    if (!req.body.email.match(regexEmail)) {
+    if (!req.body || !req.body.email || !req.body.password) {
+        res.status(400).json({ error: 'Invalid form !' });
+    }else if (!req.body.email.match(regexEmail)) {
         res.status(400).json({ error: 'Invalid email format !' });
-    } else if (req.body.password.length < 5) {
+    }else if (!req.body.password.match(/[A-Z]/) || !req.body.password.match(/[0-9]/) || req.body.password.match(/\s/) 
+    || req.body.password.length < 6) {
         res.status(400).json({ error: 'Password not strong enough !' });
     } else {
         bcrypt.hash(req.body.password, 10)      // On "sale" le mot de passe 10 fois par mesure de sécurité

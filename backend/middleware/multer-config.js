@@ -24,29 +24,25 @@ const storage = multer.diskStorage({            // fonction diskStorage de multe
             const userId = sauceObject.userId;
             let sauceName = sauceObject.name;
 
-            console.log(sauceObject);
-
-            if (!sauceName || !manufacturer || !description || !mainPepper || !heat || !userId) {
+            if (file.mimetype !== "image/jpeg" && file.mimetype !== "image/png") {
+                const error = new Error('Invalid image format');
+                callback(error, '');
+            } else if (!sauceName || !manufacturer || !description || !mainPepper || !heat || !userId) {
                 const error = new Error("Invalid form");
                 callback(error, '');
-            }
-
-            if (typeof sauceName !== 'string' || typeof manufacturer !== 'string' || typeof description !== 'string' 
+            } else if (typeof sauceName !== 'string' || typeof manufacturer !== 'string' || typeof description !== 'string' 
             || typeof mainPepper !== 'string' || typeof userId !== 'string' || typeof heat !== 'number') {
                 const error = new Error("Invalid form");
                 callback(error, '');
-            }
-
-            if (sauceName.trim() === "" && manufacturer.trim() === "" && description.trim() === "" && mainPepper.trim() === "" 
+            } else if (sauceName.trim() === "" && manufacturer.trim() === "" && description.trim() === "" && mainPepper.trim() === "" 
             && heat.trim() === "") {
                 const error = new Error("Missing field");
                 callback(error, '');
-            }
-
-            const chars = /[À-ÿ!-@[-`{-~]/g;  // Caractères indésirables (Table Unicode/U0000)
-            sauceName = sauceObject.name.replace(chars, '').toLowerCase().split(' ').join('+');
-            callback(null, sauceName + '_' + Date.now() + '.' + extension);
-            
+            } else {
+                const chars = /[À-ÿ!-@[-`{-~]/g;  // Caractères indésirables (Table Unicode/U0000)
+                sauceName = sauceObject.name.replace(chars, '').toLowerCase().split(' ').join('+');
+                callback(null, sauceName + '_' + Date.now() + '.' + extension);
+            } 
         } else {
             const error = new Error("File required");
             callback(error, '');
