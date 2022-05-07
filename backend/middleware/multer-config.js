@@ -36,7 +36,7 @@ module.exports = multer({
                 const extension = MIME_TYPES[file.mimetype];
                 const sauceObject = JSON.parse(req.body.sauce);
                 let sauceName = sauceObject.name;
-                validateSaucePayload(req, sauceObject); // Check du formulaire avant de sauvegarder l'image sue le serveur
+                validateSaucePayload(req, sauceObject); // Check du formulaire avant de sauvegarder l'image sur le serveur
             } else {
                 success = false;
                 callback(new Error("Invalid Form !"));
