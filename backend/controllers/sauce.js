@@ -7,6 +7,9 @@ const fs = require('fs');
 // On importe le modèle Sauce
 const Sauce = require('../models/Sauce');
 
+// On importe la fonction de validation du formulaire
+const validateSaucePayload = require("../functions/validateform");
+
 // Fonction qui affiche toutes les sauces
 exports.getAllSauces = (req, res) => {
     Sauce.find()
@@ -24,7 +27,14 @@ exports.getOneSauce = (req, res) => {
 // Fonction pour créer une nouvelle sauce
 exports.createSauce = async (req, res) => {
     try {
+        if (!req.file) {
+            throw 'Image required !';
+        }
         const sauceObject = JSON.parse(req.body.sauce);
+        
+        // Vérification du formulaire
+        validateSaucePayload(req, sauceObject);
+
         const sauce = new Sauce({
             ...sauceObject,
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`  // On génère l'url du fichier dynamiquement
@@ -41,46 +51,20 @@ exports.createSauce = async (req, res) => {
 
 // Fonction pour modifier une sauce
 exports.modifySauce = async (req, res) => {
-/**
- * @description This function looks for the url of the image and returns its name 
- *              before modifying the sauce. If the creator of the sauce is not authenticated 
- *              his name will be undefined and the rest of the code will not be executed.
- **/
-    async function getFileName() {
-        try {
-            if(!mongoose.isValidObjectId(req.params.id)) {
-                throw 'Invalid sauce id !';
-            }
-            const sauce = await Sauce.findOne({ _id: req.params.id });
-            if (!sauce) {
-                throw 'Sauce not found !';
-            }
-            if (!req.auth.userId || (sauce.userId !== req.auth.userId)) {
-                throw 'Unauthorized request !';
-            } 
-            const imgUrl = sauce.imageUrl;
-            const fileName = imgUrl.split('images/')[1];
-            return fileName;
-        } catch (error) {
-            switch(error) {
-                case "Invalid sauce id !":
-                    statusCode = 422;   // Entité non traitable
-                    break;
-                case "Sauce not found !":
-                    statusCode = 404;   // Objet non trouvé
-                    break;
-                case "Unauthorized request !":
-                    statusCode = 403;   // Accès interdit
-                    break;
-                default:
-                    statusCode = 400;   // Mauvaise requête
-            }
-            res.status(statusCode).json({ error });
+    try {
+        if(!mongoose.isValidObjectId(req.params.id)) {
+            throw 'Invalid sauce id !';
         }
-    }
-    const fileName = await getFileName();
+        const sauce = await Sauce.findOne({ _id: req.params.id });
+        if (!sauce) {
+            throw 'Sauce not found !';
+        }
+        if (!req.auth.userId || (sauce.userId !== req.auth.userId)) {
+            throw 'Unauthorized request !';
+        }
+        // On réucpère le nom de l'ancienne image
+        const fileName = sauce.imageUrl.split('images/')[1];
 
-    if (fileName !== undefined) {
         // Condition ternaire pour vérifier si nouvelle image et exécution différente selon oui ou non
         const sauceObject = req.file ?
         {
@@ -88,18 +72,36 @@ exports.modifySauce = async (req, res) => {
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
         } : { ...req.body };
 
-        // On met à jour la sauce et on supprime l'ancienne image si nouvelle
-        await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })  
-            .then(() => {
-                if(req.file) {
-                    fs.unlink(`images/${fileName}`, (error) => {
-                        if (error) throw error;
-                        console.log(`Old image deleted (${fileName})`);
-                    });
-                } else { console.log("No new image"); }
-                res.status(200).json({ message: 'Sauce modified !' });
-            })
-            .catch(error => res.status(400).json({ error }));
+        // Vérification du formulaire
+        validateSaucePayload(req, sauceObject);
+        
+        // Si nouvelle image on supprime l'ancienne
+        if (req.file) {
+            fs.unlink(`images/${fileName}`, (error) => {
+                if (error) throw error;
+                console.log(`Old image deleted (${fileName})`);
+            });
+        }
+        const saveSauce = await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id });
+        if (!saveSauce) {
+            throw 'An error has occured !';
+        }
+        res.status(200).json({ message: 'Sauce modified !' });
+    } catch (error) {
+        switch(error) {
+            case "Invalid sauce id !":
+                statusCode = 422;   // Entité non traitable
+                break;
+            case "Sauce not found !":
+                statusCode = 404;   // Objet non trouvé
+                break;
+            case "Unauthorized request !":
+                statusCode = 403;   // Accès interdit
+                break;
+            default:
+                statusCode = 400;   // Mauvaise requête
+        }
+        res.status(statusCode).json({ error });
     }
 };
 

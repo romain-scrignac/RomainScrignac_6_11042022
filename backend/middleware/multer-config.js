@@ -1,6 +1,9 @@
 // On importer multer
 const multer = require('multer');
 
+// On importe la fonction de validation du formulaire
+const validateSaucePayload = require("../functions/validateform");
+
 // Création dictionnaire pour les extensions
 const MIME_TYPES = {
     'image/jpg': 'jpg',
@@ -9,45 +12,50 @@ const MIME_TYPES = {
 };
 
 // Création d'un objet de configuration pour multer
-const storage = multer.diskStorage({            // fonction diskStorage de multer qui a besoin de 2 paramètres: destination et filename
+const storage = multer.diskStorage({    // fonction diskStorage de multer qui a besoin de 2 paramètres: destination et filename
     destination: (req, file, callback) => {
         callback(null, 'images')
     },
     filename: (req, file, callback) => {
         const extension = MIME_TYPES[file.mimetype];    // On crée l'extension avec la propriété mimetype de file
-        if (req.body.sauce && file) {
-            const sauceObject = JSON.parse(req.body.sauce);
-            const manufacturer = sauceObject.manufacturer;
-            const description = sauceObject.description;
-            const mainPepper = sauceObject.mainPepper;
-            const heat = sauceObject.heat;
-            const userId = sauceObject.userId;
-            let sauceName = sauceObject.name;
-
-            if (file.mimetype !== "image/jpeg" && file.mimetype !== "image/png") {
-                const error = new Error('Invalid image format');
-                callback(error, '');
-            } else if (!sauceName || !manufacturer || !description || !mainPepper || !heat || !userId) {
-                const error = new Error("Invalid form");
-                callback(error, '');
-            } else if (typeof sauceName !== 'string' || typeof manufacturer !== 'string' || typeof description !== 'string' 
-            || typeof mainPepper !== 'string' || typeof userId !== 'string' || typeof heat !== 'number') {
-                const error = new Error("Invalid form");
-                callback(error, '');
-            } else if (sauceName.trim() === "" && manufacturer.trim() === "" && description.trim() === "" && mainPepper.trim() === "" 
-            && heat.trim() === "") {
-                const error = new Error("Missing field");
-                callback(error, '');
-            } else {
-                const chars = /[À-ÿ!-@[-`{-~]/g;  // Caractères indésirables (Table Unicode/U0000)
-                sauceName = sauceObject.name.replace(chars, '').toLowerCase().split(' ').join('+');
-                callback(null, sauceName + '_' + Date.now() + '.' + extension);
-            } 
-        } else {
-            const error = new Error("File required");
-            callback(error, '');
-        }
+        const sauceObject = JSON.parse(req.body.sauce);
+        let sauceName = sauceObject.name;
+        const chars = /[À-ÿ!-@[-`{-~]/g;  // Caractères indésirables pour un nom de fichier (Table Unicode/U0000)
+        sauceName = sauceObject.name.replace(chars, '').toLowerCase().split(' ').join('+');
+        callback(null, sauceName + '_' + Date.now() + '.' + extension);
     }
 });
 
-module.exports = multer({ storage }).single('image');   // fonction single de multer pour indiquer qu'il s'agit d'une seule image
+module.exports = multer({
+    storage,
+    fileFilter: function (req, file, callback) {    
+
+        let success = true;
+        try {
+            if (req.body.sauce != undefined) {
+                const extension = MIME_TYPES[file.mimetype];
+                const sauceObject = JSON.parse(req.body.sauce);
+                let sauceName = sauceObject.name;
+                validateSaucePayload(req, sauceObject); // Check du formulaire avant de sauvegarder l'image sue le serveur
+            } else {
+                success = false;
+                callback(new Error("Invalid Form !"));
+            }
+        } catch (error) {
+            success = false;
+            callback(new Error(error));
+        }
+        
+        // On vérifie le format de l'image
+        if(file.mimetype !== 'image/jpeg' && file.mimetype !== 'image/png') {
+            success = false;
+            callback({ message: "Invalid Image !" }, false);
+        }
+
+        if (success) {
+            callback(null, true);
+        }
+    },
+    limits: {   // On vérifie le poids de l'image
+        fileSize: 1024 * 1024
+}}).single('image');   // fonction single de multer pour indiquer qu'il s'agit d'une seule image
