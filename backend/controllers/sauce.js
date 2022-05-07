@@ -113,11 +113,9 @@ exports.deleteSauce = async (req, res) => {
         }
         const sauce = await Sauce.findOne({ _id: req.params.id })
         if (!sauce) {
-            statusCode = 404;
             throw 'Sauce not found !';
         }
         if (!req.auth.userId || (sauce.userId !== req.auth.userId)) {
-            statusCode = 403;
             throw 'Unauthorized request !';
         }
         const fileName = sauce.imageUrl.split('images/')[1];    // On récupère le nom de l'image
