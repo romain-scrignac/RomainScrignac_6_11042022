@@ -15,9 +15,11 @@ exports.signup = (req, res) => {
         res.status(400).json({ error: 'Invalid form !' });
     }else if (!req.body.email.match(regexEmail)) {
         res.status(400).json({ error: 'Invalid email format !' });
-    }else if (!req.body.password.match(/[A-Z]/) || !req.body.password.match(/[0-9]/) || req.body.password.match(/\s/) 
-    || req.body.password.length < 6) {
+    }else if (!req.body.password.match(/[a-z]/) || !req.body.password.match(/[A-Z]/) || !req.body.password.match(/[0-9]/)
+    || req.body.password.length < 8) {
         res.status(400).json({ error: 'Password not strong enough !' });
+    } else if (req.body.password.match(/\s/)) {
+        res.status(400).json({ error: 'Espaces characters are not allowed !' });
     } else {
         bcrypt.hash(req.body.password, 10)      // On "sale" le mot de passe 10 fois par mesure de sécurité
         .then(hash => {
