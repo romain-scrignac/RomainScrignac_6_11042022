@@ -157,6 +157,10 @@ exports.likeSauce = async (req, res) => {
             throw 'Invalid user id !';
         }
 
+        if (req.auth.userId !== userId) {
+            throw 'Unauthorized request !'
+        }
+
         // Si l'utilisateur like une sauce
         if (!usersLiked.includes(userId) && !usersDisliked.includes(userId) && like === 1) {
             await Sauce.updateOne(
@@ -165,34 +169,40 @@ exports.likeSauce = async (req, res) => {
             res.status(200).json({ message: 'Like added !' });
         }
         // Si l'utilisateur retire son like
-        if (usersLiked.includes(userId) && like === 0) {
+        else if (usersLiked.includes(userId) && like === 0) {
             await Sauce.updateOne(
                 { _id: req.params.id }, {$inc: { likes: -1 }, $pull: { usersLiked: userId }}
             )
             res.status(200).json({ message: 'Like removed !' });
         }
         // Si l'utilisateur dislike une sauce
-        if (!usersDisliked.includes(userId) && !usersLiked.includes(userId) && like === -1) {
+        else if (!usersDisliked.includes(userId) && !usersLiked.includes(userId) && like === -1) {
             await Sauce.updateOne(
                 { _id: req.params.id }, {$inc: { dislikes: 1 }, $push: { usersDisliked: userId }}
             )
             res.status(200).json({ message: 'Dislike added !' });
         }
         // Si l'utilisateur retire son dislike
-        if (usersDisliked.includes(userId) && like === 0) {
+        else if (usersDisliked.includes(userId) && like === 0) {
             await Sauce.updateOne(
                 { _id: req.params.id }, {$inc: { dislikes: -1 }, $pull: { usersDisliked: userId }}
             )
             res.status(200).json({ message: 'Dislike removed !' });
         }
+        else {
+            throw 'Wrong request !';
+        }
     } catch(error) {
         switch (error) {
             case "Invalid sauce id !":
             case "Invalid user id !":
-                statusCode = 422;
+                statusCode = 422;   // Entité non traitable
                     break;
+            case "Unauthorized request !":
+                statusCode = 403;   // Accès interdit
+                break;
             default:
-                statusCode = 400;
+                statusCode = 400;   // Mauvaise requête
         }
         res.status(statusCode).json({ error });
     }
