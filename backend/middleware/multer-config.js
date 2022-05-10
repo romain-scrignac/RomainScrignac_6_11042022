@@ -33,9 +33,7 @@ module.exports = multer({
         let success = true;
         try {
             if (req.body.sauce != undefined) {
-                const extension = MIME_TYPES[file.mimetype];
                 const sauceObject = JSON.parse(req.body.sauce);
-                let sauceName = sauceObject.name;
                 validateSaucePayload(req, sauceObject); // Check du formulaire avant de sauvegarder l'image sur le serveur
             } else {
                 success = false;
