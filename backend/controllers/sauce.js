@@ -148,6 +148,9 @@ exports.likeSauce = async (req, res) => {
             throw 'Invalid sauce id !';
         }
         const sauce = await Sauce.findOne({ _id: req.params.id });
+        if (!sauce) {
+            throw 'Sauce not found !';
+        }
         const like = req.body.like;
         const userId = req.body.userId;
         const usersLiked = sauce.usersLiked;
@@ -197,7 +200,10 @@ exports.likeSauce = async (req, res) => {
             case "Invalid sauce id !":
             case "Invalid user id !":
                 statusCode = 422;   // Entité non traitable
-                    break;
+                break;
+            case "Sauce not found !":
+                statusCode = 404;    // Objet non trouvé
+                break;
             case "Unauthorized request !":
                 statusCode = 403;   // Accès interdit
                 break;
