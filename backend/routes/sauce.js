@@ -23,7 +23,7 @@ const multerMiddleware = (req, res, next) => {multer(req, res, err => {
     }
 })};
 
-// On importe les routes avec sauceCtrl et la fonction createSauce. On ajoute auth et multer
+// On importe les routes avec sauceCtrl auxquelles on ajoute auth et multer
 router.get('/', auth, sauceCtrl.getAllSauces);                      // Requête GET pour récupérer toutes les sauces
 router.get('/:id', auth, sauceCtrl.getOneSauce);                    // Requête GET pour récupérer une seule sauce
 router.post('/', auth, multerMiddleware, sauceCtrl.createSauce);    // Requête POST pour créer une nouvelle sauce
